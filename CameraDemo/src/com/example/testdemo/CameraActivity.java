@@ -12,6 +12,7 @@ import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.Parameters;
 import android.hardware.Camera.PictureCallback;
+import android.media.ExifInterface;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -85,7 +86,8 @@ public class CameraActivity extends Activity {
 		public void onOrientationChanged(int orientation) {
 			if (orientation == ORIENTATION_UNKNOWN)
 				return;
-			mOrientation = CameraUtil.roundOrientation(orientation, mOrientation);
+			mOrientation = CameraUtil.roundOrientation(orientation,
+					mOrientation);
 
 			Log.i("CameraActivity", "Orientation " + mOrientation);
 		}
@@ -234,37 +236,28 @@ public class CameraActivity extends Activity {
 	 */
 	PictureCallback jpegCallback = new PictureCallback() {
 		public void onPictureTaken(byte[] data, Camera camera) {
-			FileOutputStream outStream = null;
-			try {
-				// 加载照片，主要用来压缩所照的相片
-				Bitmap cameraBitmap = CameraUtil.makeBitmap(data, 50 * 1024);
-				// 设置照相预览的相片旋转的角度
-				int roate = mOrientation
-						+ CameraUtil.getDisplayRotation(CameraActivity.this);
-				roate = (360 - roate) % 360;
-				// 旋转照片
-				Bitmap routeBitmap = CameraUtil.rotate(cameraBitmap, roate);
-				// 把数据写入到文件中
-				outStream = writeDataToFile(data);
-				// 设置预览图显示
-				RelativeLayout.LayoutParams layoutPara = new LayoutParams(
-						mPreview.getWidth(), mPreview.getHeight());
-				takePreview.setLayoutParams(layoutPara);
-				takePreview.setImageBitmap(routeBitmap);
-				CameraUtil.fadeIn(takePreview);
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
-			} finally {
-				if (outStream != null) {
-					try {
-						outStream.close();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				}
-			}
+			// 加载照片，主要用来压缩所照的相片
+			Bitmap cameraBitmap = CameraUtil.makeBitmap(data, 50 * 1024);
+
+			int degrees = Exif.getOrientation(data);
+			Log.i("CameraDemo", "exif data degrees" + degrees);
+
+			// 设置照相预览的相片旋转的角度
+			int roate = mOrientation
+					+ CameraUtil.getDisplayRotation(CameraActivity.this);
+			roate = roate - degrees;
+			roate = (360 - roate) % 360;
+			// 旋转照片
+			Bitmap routeBitmap = CameraUtil.rotate(cameraBitmap, roate);
+			// 把数据写入到文件中
+			writeDataToFile(data);
+
+			// 设置预览图显示
+			RelativeLayout.LayoutParams layoutPara = new LayoutParams(
+					mPreview.getWidth(), mPreview.getHeight());
+			takePreview.setLayoutParams(layoutPara);
+			takePreview.setImageBitmap(routeBitmap);
+			CameraUtil.fadeIn(takePreview);
 		}
 
 	};
@@ -277,21 +270,35 @@ public class CameraActivity extends Activity {
 	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
-	private FileOutputStream writeDataToFile(byte[] data)
-			throws FileNotFoundException, IOException {
-		FileOutputStream outStream;
+	private boolean writeDataToFile(byte[] data) {
+		boolean writeFlag = false;
+		FileOutputStream outStream = null;
 		File fileDir = new File(fileDic);
 		if (!fileDir.exists()) {
 			fileDir.mkdir();
 		}
-		final String fileName = fileDic + "/" + System.currentTimeMillis()
-				+ ".jpg";
+		String fileName = fileDic + "/" + System.currentTimeMillis() + ".jpg";
 		currentFile = fileName;
-		outStream = new FileOutputStream(fileName);
-		outStream.write(data);
-		outStream.flush();
-		showPostCaptureAlert();
-		return outStream;
+		try {
+			outStream = new FileOutputStream(fileName);
+			outStream.write(data);
+			outStream.flush();
+			showPostCaptureAlert();
+			writeFlag = true;
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			if (outStream != null) {
+				try {
+					outStream.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		return writeFlag;
 	}
 
 	/**
@@ -339,6 +346,8 @@ public class CameraActivity extends Activity {
 				rotation = (info.orientation + orientation) % 360;
 			}
 		}
+
+		Log.i("Camera", "take picture rotation" + rotation);
 		parameters.setRotation(rotation);
 	}
 
