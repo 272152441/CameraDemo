@@ -1,0 +1,89 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context=".CameraActivity" >
+
+    <FrameLayout
+        android:id="@id/surface_camera"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/llyt_control"
+        android:layout_alignParentTop="true"
+        android:layout_centerInParent="true" />
+
+    <ImageView
+        android:id="@id/take_picture_preview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/llyt_control"
+        android:layout_alignParentTop="true"
+        android:layout_centerInParent="true"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@id/llyt_control"
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        android:layout_alignParentBottom="true"
+        android:gravity="center"
+        android:orientation="horizontal" >
+
+        <LinearLayout
+            android:id="@id/control_camera"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_alignParentBottom="true"
+            android:gravity="center" >
+
+            <Button
+                android:id="@id/take_picture"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="cameraOnClick"
+                android:text="照相" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@id/control_picture"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_alignParentBottom="true"
+            android:gravity="center"
+            android:visibility="gone" >
+
+            <Button
+                android:id="@id/take_picture_confirm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="cameraOnClick"
+                android:text="确定" />
+
+            <Button
+                android:id="@id/take_picture_retry"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="cameraOnClick"
+                android:text="重拍" />
+
+            <Button
+                android:id="@id/take_picture_again"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="cameraOnClick"
+                android:text="再拍一张" />
+
+            <Button
+                android:id="@id/take_picture_back"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="cameraOnClick"
+                android:text="返回" />
+        </LinearLayout>
+    </LinearLayout>
+
+</RelativeLayout>

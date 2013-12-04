@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <item name="surface_camera" type="id">false</item>
+    <item name="control_camera" type="id">false</item>
+    <item name="take_picture" type="id">false</item>
+    <item name="control_picture" type="id">false</item>
+    <item name="take_picture_confirm" type="id">false</item>
+    <item name="take_picture_retry" type="id">false</item>
+    <item name="take_picture_again" type="id">false</item>
+    <item name="take_picture_back" type="id">false</item>
+    <item name="llyt_control" type="id">false</item>
+    <item name="take_picture_preview" type="id">false</item>
+</resources>
