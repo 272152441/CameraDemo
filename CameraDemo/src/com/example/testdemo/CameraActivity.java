@@ -1,5 +1,6 @@
 package com.example.testdemo;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -8,11 +9,14 @@ import java.io.IOException;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
+import android.hardware.Camera.OnZoomChangeListener;
 import android.hardware.Camera.Parameters;
 import android.hardware.Camera.PictureCallback;
-import android.media.ExifInterface;
+import android.hardware.Camera.Size;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -22,9 +26,12 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.SeekBar;
 import android.widget.RelativeLayout.LayoutParams;
+import android.widget.SeekBar.OnSeekBarChangeListener;
 
-public class CameraActivity extends Activity {
+public class CameraActivity extends Activity implements OnZoomChangeListener,
+		OnSeekBarChangeListener {
 
 	private CameraPreview mPreview;
 	private FrameLayout parentPreview;
@@ -64,6 +71,8 @@ public class CameraActivity extends Activity {
 		controlCamera = (LinearLayout) findViewById(R.id.control_camera);
 		controlPicture = (LinearLayout) findViewById(R.id.control_picture);
 		takePreview = (ImageView) findViewById(R.id.take_picture_preview);
+		SeekBar zoomControl = (SeekBar) findViewById(R.id.zoom_control);
+		zoomControl.setOnSeekBarChangeListener(this);
 		// 找到所有可以利用的摄像头
 		numberOfCameras = Camera.getNumberOfCameras();
 		// 初始化默认的摄像头id主要是找到后置摄像头
@@ -99,6 +108,13 @@ public class CameraActivity extends Activity {
 		// 激活照相功能
 		mCamera = Camera.open();
 		if (mCamera != null) {
+
+			Parameters param = mCamera.getParameters();
+			SeekBar zoomControl = (SeekBar) findViewById(R.id.zoom_control);
+			zoomControl.setMax(param.getMaxZoom());
+			zoomControl.setProgress(param.getZoom());
+
+			mCamera.setZoomChangeListener(this);
 			cameraCurrentlyLocked = defaultCameraId;
 			mPreview = new CameraPreview(this);
 			if (cameraCurrentlyLocked > -1) {
@@ -117,6 +133,7 @@ public class CameraActivity extends Activity {
 		super.onPause();
 		// 暂停照相功能
 		if (mCamera != null) {
+			mCamera.setZoomChangeListener(null);
 			if (cameraCurrentlyLocked > -1) {
 				mPreview.setCamera(null, cameraCurrentlyLocked);
 			} else {
@@ -155,7 +172,6 @@ public class CameraActivity extends Activity {
 			retryTakePic();
 			hidePostCaptureAlert();
 			break;
-
 		default:
 			break;
 		}
@@ -237,20 +253,39 @@ public class CameraActivity extends Activity {
 	PictureCallback jpegCallback = new PictureCallback() {
 		public void onPictureTaken(byte[] data, Camera camera) {
 			// 加载照片，主要用来压缩所照的相片
-			Bitmap cameraBitmap = CameraUtil.makeBitmap(data, 50 * 1024);
 
 			int degrees = Exif.getOrientation(data);
 			Log.i("CameraDemo", "exif data degrees" + degrees);
 
+			Size preViewSize = mPreview.getmPreviewSize();
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			Bitmap bm = BitmapFactory.decodeByteArray(data, 0, data.length);
+			if (degrees != 0) {
+				Matrix matrix = new Matrix();
+				matrix.postRotate(degrees);
+				bm = Bitmap.createBitmap(bm, 0, 0, preViewSize.height,
+						preViewSize.width, matrix, true);
+			}
+			data = null;
+			// if (mJpegRotation % 180 != 0) {
+			// int x = r.height;
+			// int y = r.width;
+			// r.width = x;
+			// r.height = y;
+			// }
+			bm.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+			byte[] handledata = baos.toByteArray();
+			Bitmap cameraBitmap = CameraUtil.makeBitmap(handledata, 300 * 1024);
 			// 设置照相预览的相片旋转的角度
 			int roate = mOrientation
 					+ CameraUtil.getDisplayRotation(CameraActivity.this);
-			roate = roate - degrees;
+			// roate = roate - degrees;
 			roate = (360 - roate) % 360;
+
 			// 旋转照片
 			Bitmap routeBitmap = CameraUtil.rotate(cameraBitmap, roate);
 			// 把数据写入到文件中
-			writeDataToFile(data);
+			writeDataToFile(handledata);
 
 			// 设置预览图显示
 			RelativeLayout.LayoutParams layoutPara = new LayoutParams(
@@ -351,4 +386,56 @@ public class CameraActivity extends Activity {
 		parameters.setRotation(rotation);
 	}
 
+	private void gestureZoomIn() {
+		Parameters mParameters = mCamera.getParameters();
+		if (mParameters.isZoomSupported()) {
+			int mZoomMax = mParameters.getMaxZoom();
+			int currentZoom = mParameters.getZoom();
+			if (currentZoom < mZoomMax) {
+				currentZoom++;
+				onZoomValueChanged(currentZoom);
+			}
+		}
+	}
+
+	private void onZoomValueChanged(int currentZoom) {
+		Parameters mParameters = mCamera.getParameters();
+		mParameters.setZoom(currentZoom);
+		mCamera.setParameters(mParameters);
+
+	}
+
+	private void gestureZoomOut() {
+		Parameters mParameters = mCamera.getParameters();
+		if (mParameters.isZoomSupported()) {
+			int currentZoom = mParameters.getZoom();
+			if (0 < currentZoom) {
+				currentZoom--;
+				onZoomValueChanged(currentZoom);
+			}
+		}
+	}
+
+	@Override
+	public void onZoomChange(int zoomValue, boolean stopped, Camera camera) {
+		
+	}
+
+	@Override
+	public void onProgressChanged(SeekBar seekBar, int progress,
+			boolean fromUser) {
+		Parameters param = mCamera.getParameters();
+		param.setZoom(progress);
+		mCamera.setParameters(param);
+	}
+
+	@Override
+	public void onStartTrackingTouch(SeekBar seekBar) {
+
+	}
+
+	@Override
+	public void onStopTrackingTouch(SeekBar seekBar) {
+
+	}
 }

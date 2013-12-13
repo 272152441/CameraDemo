@@ -20,6 +20,7 @@ import java.io.Closeable;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -51,6 +52,8 @@ public class CameraUtil {
 	public static final int ORIENTATION_HYSTERESIS = 5;
 
 	public static final String REVIEW_ACTION = "com.android.camera.action.REVIEW";
+	
+	public static final String SCENE_MODE_HDR = "hdr";
 
 	private static boolean sIsTabletUI;
 	private static float sPixelDensity = 1;
@@ -531,5 +534,72 @@ public class CameraUtil {
 			}
 		}
 		return inSampleSize;
+	}
+
+	public static Bitmap decodeYUV422P(byte[] yuv422p, int width, int height)
+			throws NullPointerException, IllegalArgumentException {
+		final int frameSize = width * height;
+		int[] rgb = new int[frameSize];
+		for (int j = 0, yp = 0; j < height; j++) {
+			int up = frameSize + (j * (width / 2)), u = 0, v = 0;
+			int vp = ((int) (frameSize * 1.5) + (j * (width / 2)));
+			for (int i = 0; i < width; i++, yp++) {
+				int y = (0xff & ((int) yuv422p[yp])) - 16;
+				if (y < 0)
+					y = 0;
+				if ((i & 1) == 0) {
+					u = (0xff & yuv422p[up++]) - 128;
+					v = (0xff & yuv422p[vp++]) - 128;
+				}
+
+				int y1192 = 1192 * y;
+				int r = (y1192 + 1634 * v);
+				int g = (y1192 - 833 * v - 400 * u);
+				int b = (y1192 + 2066 * u);
+
+				if (r < 0)
+					r = 0;
+				else if (r > 262143)
+					r = 262143;
+				if (g < 0)
+					g = 0;
+				else if (g > 262143)
+					g = 262143;
+				if (b < 0)
+					b = 0;
+				else if (b > 262143)
+					b = 262143;
+
+				rgb[yp] = 0xff000000 | ((r << 6) & 0xff0000)
+						| ((g >> 2) & 0xff00) | ((b >> 10) & 0xff);
+			}
+		}
+		return Bitmap.createBitmap(rgb, width, height, Bitmap.Config.ARGB_8888);
+	}
+
+	public static boolean isCameraHdrSupported(Parameters params) {
+		List<String> supported = params.getSupportedSceneModes();
+		return (supported != null) && supported.contains(SCENE_MODE_HDR);
+	}
+
+	@TargetApi(ApiHelper.VERSION_CODES.ICE_CREAM_SANDWICH)
+	public static boolean isMeteringAreaSupported(Parameters params) {
+		if (ApiHelper.HAS_CAMERA_METERING_AREA) {
+			return params.getMaxNumMeteringAreas() > 0;
+		}
+		return false;
+	}
+
+	@TargetApi(ApiHelper.VERSION_CODES.ICE_CREAM_SANDWICH)
+	public static boolean isFocusAreaSupported(Parameters params) {
+		if (ApiHelper.HAS_CAMERA_FOCUS_AREA) {
+			return (params.getMaxNumFocusAreas() > 0 && isSupported(
+					Parameters.FOCUS_MODE_AUTO, params.getSupportedFocusModes()));
+		}
+		return false;
+	}
+
+	public static boolean isSupported(String value, List<String> supported) {
+		return supported == null ? false : supported.indexOf(value) >= 0;
 	}
 }
