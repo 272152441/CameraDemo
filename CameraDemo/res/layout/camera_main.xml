@@ -1,24 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".CameraActivity" >
 
-    <RelativeLayout
+    <FrameLayout
+        android:id="@id/surface_camera"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_above="@id/llyt_control"
         android:layout_alignParentTop="true"
         android:layout_centerInParent="true" >
-
-        <FrameLayout
-            android:id="@id/surface_camera"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_alignParentTop="true"
-            android:layout_centerInParent="true" >
-        </FrameLayout>
-    </RelativeLayout>
+    </FrameLayout>
 
     <ImageView
         android:id="@id/take_picture_preview"
@@ -29,6 +23,15 @@
         android:layout_centerInParent="true"
         android:visibility="gone" />
 
+    <com.example.testdemo.RotateImageView
+        android:id="@+id/camera_setting"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_alignParentRight="true"
+        android:layout_margin="2dp"
+        android:onClick="cameraOnClick"
+        android:src="@drawable/more_setting" />
+
     <LinearLayout
         android:id="@id/llyt_control"
         android:layout_width="match_parent"
@@ -37,61 +40,64 @@
         android:gravity="center"
         android:orientation="horizontal" >
 
-        <LinearLayout
+        <RelativeLayout
             android:id="@id/control_camera"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_alignParentBottom="true"
-            android:gravity="center" >
+            android:layout_height="match_parent" >
 
-            <Button
+            <com.example.testdemo.RotateImageView
                 android:id="@id/take_picture"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_centerInParent="true"
                 android:onClick="cameraOnClick"
-                android:text="照相" />
+                android:src="@drawable/camera_bg" />
 
             <SeekBar
                 android:id="@+id/zoom_control"
-                android:layout_width="200dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_centerInParent="true"
-                android:layout_marginTop="20dp" />
-        </LinearLayout>
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginTop="20dp"
+                android:layout_toRightOf="@id/take_picture" />
+        </RelativeLayout>
 
         <LinearLayout
             android:id="@id/control_picture"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_alignParentBottom="true"
             android:gravity="center"
+            android:orientation="horizontal"
             android:visibility="gone" >
 
-            <Button
+            <com.example.testdemo.RotateButton
                 android:id="@id/take_picture_confirm"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
                 android:onClick="cameraOnClick"
                 android:text="确定" />
 
-            <Button
+            <com.example.testdemo.RotateButton
                 android:id="@id/take_picture_retry"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
                 android:onClick="cameraOnClick"
                 android:text="重拍" />
 
-            <Button
+            <com.example.testdemo.RotateButton
                 android:id="@id/take_picture_again"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
                 android:onClick="cameraOnClick"
                 android:text="再拍一张" />
 
-            <Button
+            <com.example.testdemo.RotateButton
                 android:id="@id/take_picture_back"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
                 android:onClick="cameraOnClick"
                 android:text="返回" />
         </LinearLayout>
